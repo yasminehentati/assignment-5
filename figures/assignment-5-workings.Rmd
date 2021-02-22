@@ -1,0 +1,101 @@
+---
+title: "Assignment 5 Figures"
+author: "Yasmine Hentati"
+date: "2/21/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, error = FALSE)
+```
+
+# Loading & Cleaning Data
+First, I'll load required packages.
+
+```{r}
+# install.packages("ggplot2")
+# install.packages("here")
+# install.packages("FSAdata")
+# install.packages("viridis")
+install.packages("ggtext")
+library(FSAdata)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(here)
+library(readr)
+library(viridis)
+library(ggtext)
+```
+
+The assignment instructions specifically mention the Siscowet Lake Trout data, so I will be using those. 
+
+Looking at and saving the data:
+
+```{r}
+?FSAdata
+View(SiscowetMI2004)
+siscowet <- SiscowetMI2004
+write_csv(siscowet, path = "data/Siscowet_Raw.csv")
+```
+
+I'm going to compare lengths and weights of Siscowet Lake trout between the study sites. Extracting the data I need: 
+
+```{r}
+
+siscowet.sites <- siscowet %>%
+  select(locID, fishID, len, wgt) 
+glimpse(siscowet.sites)
+
+```
+
+# Explanatory Figure 
+
+```{r}
+
+# base plot
+weightplot <- ggplot(siscowet.sites, aes(x=len, y=wgt, color=locID)) + geom_jitter(shape=16, position=position_jitter(0.3)) + theme_minimal()
+
+ggsave(here("figures", "exploratory_plot.png"))
+```
+
+The weights across sites seem to be pretty similar, with one major outlier that seems like it might be an error. I'm going to assume it is and remove that row for the sake of the assignment.
+
+```{r}
+# remove the outlying value 
+siscowet.data <- siscowet.sites %>% filter(wgt != 15800)
+# check that it worked 
+max(siscowet.data$wgt)
+```
+
+# Expository Figure
+
+Let's make a figure that actually looks somewhat decent. Here I'm adding axis titles, creating a legend, setting some text sizes, and using a color-blind-friendly color scheme. 
+
+```{r}
+
+prettyplot <- siscowet.data %>%
+  ggplot(aes(x=len, y=wgt, color=locID)) +
+  geom_point() + 
+  # geom_smooth(method="lm", se = FALSE) i tried to get it to only do one line for all the data, but it didn't work, and 4 lines looked too busy + 
+  xlab("Siscowet Lake Trout Length (mm)") +
+  ylab("Siscowet Lake Trout Weight (g)") +
+  labs(color="Sampling Location", title="Length and Weight of Siscowet Lake Trout") +
+  scale_color_viridis_d() + 
+  theme(plot.title.position = "plot",
+    plot.title = element_textbox_simple(size=14),
+      axis.title.y = element_text(angle = 0, 
+                                  vjust = 0.5,size=14),
+        axis.text = element_text(size=11),
+      legend.title=element_text(size=8), 
+        legend.text=element_text(size=10)) + # legend arguments didn't work for some reason 
+  theme_minimal() 
+
+prettyplot
+# i wanted to show the colors in a sub-header instead of in a legend on the side, but i couldn't figure out how to tell R to show me the codes for the colors i'm using in the plot (so i can specify them in the HTML like Leek did)
+
+ggsave(here("figures", "expository_plot.png"))
+
+```
+
+
